@@ -39,6 +39,8 @@ module {
     Text.toLower(trimmed);
   };
 
+  // Note: "PTR" records are not explicitly added to the domainToRecordsMap
+  // instead, they are implied through the principalToDomainIndex
   public func addRecord(
     { domainToRecordsMap; principalToDomainIndex }: Types.DomainRecordsStore,
     domain : Types.Domain,
@@ -51,6 +53,8 @@ module {
     Map.add(principalToDomainIndex, Principal.compare, principal, domain);
   };
 
+  // Removes the domain record for the given principal
+  // If there are no more prinicpals that point to the given domain record, it is removed
   public func removePrincipalDomainLink(
     { domainToRecordsMap; principalToDomainIndex }: Types.DomainRecordsStore,
     principal : Principal,
@@ -86,7 +90,8 @@ module {
     let recordTypeUpper = Text.toUpper(recordType);
 
     recordTypeUpper == "CID" or
-    recordTypeUpper == "SID"
+    recordTypeUpper == "SID" or
+    recordTypeUpper == "PTR"
   };
 
   func addToDomainRecordsMap(

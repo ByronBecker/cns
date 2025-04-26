@@ -4,6 +4,8 @@ import DomainTypes "../../common/data/domain/types";
 import Option "mo:base/Option";
 import Text "mo:base/Text";
 import Result "mo:base/Result";
+import Iter "mo:base/Iter";
+import Principal "mo:base/Principal";
 
 module {
   public func register(
@@ -60,12 +62,16 @@ module {
   func isCompatibleWithDomain(record: DomainTypes.DomainRecord, domain : Text) : Result.Result<(), Text> {
     switch (record.record_type) {
       case ("SID") {
-        if (Text.endsWith(domain, #text ".subnet.icp")) return #ok;
-        return #err("Unsupported TLD in domain " # domain # ", expected TLD=.subnet.icp");
+        if (not Text.endsWith(domain, #text ".subnet.icp")) return #err("Unsupported TLD in domain " # domain # ", expected TLD=.subnet.icp");
+        let parts = Iter.toArray(Text.split(domain, #char '.'));
+        // Check that the principal is a valid subnet principal (self-authenticating)
+        let principal = Principal.fromText(parts[0]);
+        if (not Principal.isSelfAuthenticating(principal)) return #err("Invalid subnet principal: " # parts[0]);
+
+        #ok;
       };
 
       case _ return #err("Unsupported record type");
-
     };
   };
 }
