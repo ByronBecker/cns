@@ -1,5 +1,5 @@
 import Text "mo:base/Text";
-import Map "mo:base/OrderedMap";
+import Map "mo:base/Map";
 import Option "mo:base/Option";
 import Principal "mo:base/Principal";
 import Types "cns_types";
@@ -8,7 +8,7 @@ actor TldOperator {
   let myTld = ".icp.";
   type DomainRecordsMap = Map.Map<Text, Types.DomainRecord>;
   let answersWrapper = Map.Make<Text>(Text.compare);
-  stable var lookupAnswersMap : DomainRecordsMap = answersWrapper.empty();
+  stable var lookupAnswersMap : DomainRecordsMap = Map.empty();
 
   public shared query func lookup(domain : Text, recordType : Text) : async Types.DomainLookup {
     var answers : [Types.DomainRecord] = [];

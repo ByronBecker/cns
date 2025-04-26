@@ -2,32 +2,47 @@
   "dfx": "0.24.3",
   "canisters": {
     "cns_root": {
-      "main": "minimal_cns/src/backend/cns_root.mo",
+      "main": "minimal_cns/canisters/cns_root/lib.mo",
       "type": "motoko",
-      "dependencies": ["name_registry"],
+      "dependencies": [
+        "name_registry"
+      ],
       "declarations": {
-        "bindings": ["js", "ts"],
+        "bindings": [
+          "js",
+          "ts"
+        ],
         "output": "./src/declarations/cns-root"
       }
     },
     "cns_root_test": {
-      "main": "minimal_cns/src/backend/cns_root.test.mo",
+      "main": "minimal_cns/canisters/cns_root/test.mo",
       "type": "motoko",
-      "dependencies": ["cns_root"]
+      "dependencies": [
+        "cns_root"
+      ]
     },
     "tld_operator": {
-      "main": "minimal_cns/src/backend/tld_operator.mo",
+      "main": "minimal_cns/canisters/tld_operator/lib.mo",
       "type": "motoko",
-      "dependencies": ["name_registry"],
+      "dependencies": [
+        "name_registry"
+      ],
       "declarations": {
-        "bindings": ["js", "ts"],
+        "bindings": [
+          "js",
+          "ts"
+        ],
         "output": "./src/declarations/tld-operator"
       }
     },
     "tld_operator_test": {
-      "main": "minimal_cns/src/backend/tld_operator.test.mo",
+      "main": "minimal_cns/canisters/tld_operator/test.mo",
       "type": "motoko",
-      "dependencies": ["name_registry", "tld_operator"]
+      "dependencies": [
+        "name_registry",
+        "tld_operator"
+      ]
     },
     "name_registry": {
       "type": "rust",
@@ -45,6 +60,11 @@
   "networks": {
     "local": {
       "type": "ephemeral"
+    }
+  },
+  "defaults": {
+    "build": {
+      "packtool": "mops sources"
     }
   }
 }
