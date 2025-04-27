@@ -5,7 +5,7 @@ import Mutate "mutations";
 import Query "queries";
 
 actor TldOperator {
-  let myTld = ".icp.";
+  let myTld = ".icp";
   stable let domainRecordsStore = Domain.initDomainRecordsStore(); 
 
   public query func lookup(args : APITypes.LookupArgs) : async APITypes.LookupResponse {

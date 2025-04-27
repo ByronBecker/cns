@@ -28,7 +28,7 @@ module {
     let sanitizedDomain = Domain.sanitizeDomain(domain);
     // TODO: sanitize other fields of the domain record(s)
 
-    switch (validateRecord(tld, sanitizedDomain, record)) {
+    switch (validateRecord(tld, sanitizedDomain, principal, record)) {
       case (#err(message)) return { success = false; message = ?message };
       case (#ok) {};
     };
@@ -42,16 +42,23 @@ module {
   };
 
   // TODO: add more checks: validate domain name and all the fields of the domain record(s).
-  func validateRecord(tld : Text, domain : Text, record : DomainTypes.DomainRecord) : Result.Result<(), Text> {
+  func validateRecord(tld : Text, domain : Text, principal : Principal, record : DomainTypes.DomainRecord) : Result.Result<(), Text> {
     if (not Text.endsWith(domain, #text tld)) {
       return #err("Unsupported TLD in domain " # domain # ", expected TLD=" # tld);
     };
 
+    // Disallow someone to register a reverse domain
+    let parts = Iter.toArray(Text.split(domain, #char '.'));
+    if (parts.size() < 2) return #err("No domain present");
+    let secondToLastPart = parts[parts.size() - 2];
+    if (secondToLastPart == "reverse") return #err("This domain is reserved");
+
+    // Check that the domain matches the record name
     if (domain != Text.toLower(record.name)) {
       return #err("Inconsistent domain record, record.name: `" # record.name # "` doesn't match domain: " # domain);
     };
 
-    switch (isCompatibleWithDomain(record, domain)) {
+    switch (isCompatibleWithDomain(tld, record, principal, domain)) {
       case (#ok) {};
       case (#err(message)) return #err("Incompatible domain record: " # message);
     };
@@ -59,14 +66,23 @@ module {
     #ok;
   };
 
-  func isCompatibleWithDomain(record: DomainTypes.DomainRecord, domain : Text) : Result.Result<(), Text> {
+  func isCompatibleWithDomain(tld : Text, record: DomainTypes.DomainRecord, principal : Principal, domain : Text) : Result.Result<(), Text> {
     switch (record.record_type) {
       case ("SID") {
-        if (not Text.endsWith(domain, #text ".subnet.icp")) return #err("Unsupported TLD in domain " # domain # ", expected TLD=.subnet.icp");
+        let expectedEnding = ".subnet" # tld;
+        if (not Text.endsWith(domain, #text(expectedEnding))) return #err("Unsupported TLD in domain " # domain # ", expected TLD=" # expectedEnding);
         let parts = Iter.toArray(Text.split(domain, #char '.'));
         // Check that the principal is a valid subnet principal (self-authenticating)
-        let principal = Principal.fromText(parts[0]);
+        let domainPrincipal = Principal.fromText(parts[0]);
+        if (domainPrincipal != principal) return #err("Domain principal does not match the provided principal");
         if (not Principal.isSelfAuthenticating(principal)) return #err("Invalid subnet principal: " # parts[0]);
+
+        #ok;
+      };
+      case ("CID") {
+        if (not Text.endsWith(domain, #text(tld))) return #err("Unsupported TLD in domain " # domain # ", expected TLD=" # tld);
+        // Check that the principal is a valid canister principal (opaque)
+        if (not Principal.isCanister(principal)) return #err("Invalid canister principal: " # Principal.toText(principal));
 
         #ok;
       };
