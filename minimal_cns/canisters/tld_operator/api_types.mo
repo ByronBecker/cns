@@ -24,7 +24,7 @@ module {
     roles : [RegistrationControllerRole];
   };
 
-  type RegistrationRecords = {
+  public type RegistrationRecords = {
     controller : [RegistrationController];
     records : ?[DomainTypes.DomainRecord];
   };
