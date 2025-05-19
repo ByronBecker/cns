@@ -1,4 +1,6 @@
+import APITypes "api_types";
 import Types "../../common/cns_types";
+import DomainTypes "../../common/data/domain/types";
 import MetricsTypes "../../common/metrics";
 import Map "mo:base/Map";
 import Option "mo:base/Option";
@@ -11,8 +13,8 @@ module {
     metrics : MetricsTypes.CnsMetrics,
     domain : Text,
     recordType : Text
-  ) : Types.DomainLookup {
-    var answers : [Types.DomainRecord] = [];
+  ) : APITypes.LookupResponse {
+    var answers : [DomainTypes.DomainRecord] = [];
     let domainLowercase : Text = Text.toLower(domain);
 
     if (Text.endsWith(domainLowercase, #text myTld)) {

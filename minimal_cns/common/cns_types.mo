@@ -1,9 +1,10 @@
 import NameRegistry "canister:name_registry";
+import DomainTypes "data/domain/types";
 import Text "mo:base/Text";
 import Principal "mo:base/Principal";
 
 module {
-  public type DomainRecord = NameRegistry.DomainRecord;
+  public type DomainRecord = DomainTypes.DomainRecord;
   public type DomainLookup = NameRegistry.DomainLookup;
 
   public type OperationResult = {

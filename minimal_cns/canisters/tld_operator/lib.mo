@@ -1,3 +1,4 @@
+import APITypes "api_types";
 import Map "mo:base/Map";
 import Metrics "../../common/metrics";
 import Principal "mo:base/Principal";
@@ -15,18 +16,18 @@ actor TldOperator {
   stable var metricsStore : Metrics.LogStore = Metrics.newStore();
   let metrics = Metrics.CnsMetrics(metricsStore);
 
-  public shared func lookup(domain : Text, recordType : Text) : async Types.DomainLookup {
-    Queries.lookup(myTld, lookupAnswersMap, Metrics.CnsMetrics(metricsStore), domain, recordType);
+  public shared func lookup(args : APITypes.LookupArgs) : async APITypes.LookupResponse {
+    Queries.lookup(myTld, lookupAnswersMap, Metrics.CnsMetrics(metricsStore), args.domain, args.recordType);
   };
 
-  public shared ({ caller }) func register(domain : Text, records : Types.RegistrationRecords) : async (Types.RegisterResult) {
-    let domainLowercase : Text = Text.toLower(domain);
-    let (result, recordType) = Mutations.validateAndRegister(caller, myTld, lookupAnswersMap, domainLowercase, records);
+  public shared ({ caller }) func register(args: APITypes.RegisterArgs) : async (APITypes.RegisterResult) {
+    let domainLowercase : Text = Text.toLower(args.domain);
+    let (result, recordType) = Mutations.validateAndRegister(caller, myTld, lookupAnswersMap, domainLowercase, args.records);
     metrics.addEntry(metrics.makeRegisterEntry(domainLowercase, recordType, result.success));
     return result;
   };
 
-  public shared query ({ caller }) func get_metrics(period : Text) : async Result.Result<Metrics.MetricsData, Text> {
+  public shared query ({ caller }) func get_metrics({ period : Text }) : async Result.Result<Metrics.MetricsData, Text> {
     if (not Principal.isController(caller)) {
       return #err("Currently only a controller can get metrics");
     };
