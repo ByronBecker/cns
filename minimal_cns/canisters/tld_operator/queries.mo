@@ -1,40 +1,78 @@
 import APITypes "api_types";
-import Types "../../common/cns_types";
 import DomainTypes "../../common/data/domain/types";
-import MetricsTypes "../../common/metrics";
-import Map "mo:base/Map";
-import Option "mo:base/Option";
 import Text "mo:base/Text";
+import Iter "mo:base/Iter";
+import Principal "mo:base/Principal";
+import Domain "../../common/data/domain";
 
 module {
   public func lookup(
-    myTld : Text,
-    lookupAnswersMap : Map.Map<Text, Types.RegistrationRecords>,
-    metrics : MetricsTypes.CnsMetrics,
+    tld : Text,
+    domainRecordsStore : DomainTypes.DomainRecordsStore,
     domain : Text,
-    recordType : Text
+    recordType : Text,
   ) : APITypes.LookupResponse {
-    var answers : [DomainTypes.DomainRecord] = [];
-    let domainLowercase : Text = Text.toLower(domain);
+    // sanitize the input domain
+    let sanitizedDomain = Domain.sanitizeDomain(domain);
 
-    if (Text.endsWith(domainLowercase, #text myTld)) {
-      switch (Text.toUpper(recordType)) {
-        case ("CID") {
-          let maybeRecords : ?Types.RegistrationRecords = Map.get(lookupAnswersMap, Text.compare, domainLowercase);
-          answers := switch (maybeRecords) {
-            case (null) { [] };
-            case (?records) {
-              let domainRecords = Option.get(records.records, []);
-              if (domainRecords.size() == 0) { [] } else { [domainRecords[0]] };
-            };
-          };
-        };
-        case _ {};
+    // Ensure the lookup domain matches the TLD and the record type is supported.
+    if (
+      not Text.endsWith(sanitizedDomain, #text tld) or
+      Domain.isRecordTypeSupported(recordType)
+    ) {
+      return { answers = []; additionals = []; authorities = [] };
+    };
+
+    if (Text.toUpper(recordType) == "PTR") return reverseLookup(domainRecordsStore, sanitizedDomain);
+
+    let answers = switch(Domain.getRecordByDomain(domainRecordsStore.domainToRecordsMap, sanitizedDomain)) {
+      case null { [] };
+      case (?record) {
+        if (Text.toUpper(record.record_type) != Text.toUpper(recordType)) { [] }
+        else { [record] }
       };
     };
-    metrics.addEntry(metrics.makeLookupEntry(domainLowercase, recordType, answers != []));
+
     {
-      answers = answers;
+      answers;
+      additionals = [];
+      authorities = [];
+    };
+  };
+
+  // Reverse lookups have the format <principal>.reverse.<tld>
+  // In this case, we expect the <principal> to be a valid principal.
+  public func reverseLookup(
+    domainRecordsStore: DomainTypes.DomainRecordsStore,
+    domain : Text,
+  ) : APITypes.LookupResponse {
+    // split the domain into parts, based on "."
+    let parts = Iter.toArray(Text.split(domain, #char '.'));
+    // expect there to be exactly 3 parts: <principal>, reverse, <tld>
+    // TODO: Is this assumption correct?
+    if (parts.size() != 3) {
+      return { answers = []; additionals = []; authorities = [] };
+    };
+
+    let principalText = parts[0];
+    // check if the first part is a valid principal - will trap if not
+    // TODO: perform this check without trapping
+    let principal = Principal.fromText(principalText);
+
+    // check if the second part is "reverse"
+    if (parts[1] != "reverse") {
+      return { answers = []; additionals = []; authorities = [] };
+    };
+
+    // look up the domain record by the principal
+
+    let answers = switch(Domain.getRecordByPrincipal(domainRecordsStore, principal)) {
+      case null { [] };
+      case (?record) { [record] };
+    };
+
+    {
+      answers;
       additionals = [];
       authorities = [];
     };
