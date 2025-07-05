@@ -1,4 +1,4 @@
-import APITypes "../../common/api_types";
+import ApiTypes "../../common/api_types";
 import Domain "../../common/data/domain";
 import DomainTypes "../../common/data/domain/Types";
 import Result "mo:base/Result";
@@ -16,7 +16,7 @@ module {
     lookupAnswersMap : DomainTypes.RegistrationRecordsStore,
     domainLowercase : Text,
     records : DomainTypes.RegistrationRecords
-  ) : (APITypes.RegisterResult, Text) {
+  ) : (ApiTypes.RegisterResult, Text) {
     let (domainRecord, maybeRegistrant) = switch (validateRegistrationRecords(myTld, lookupAnswersMap, domainLowercase, records)) {
       case (#ok(record, maybePrincipal)) { (record, maybePrincipal) };
       case (#err(msg)) {
