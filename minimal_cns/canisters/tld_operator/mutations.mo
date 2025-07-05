@@ -6,6 +6,7 @@ import Text "mo:base/Text";
 import Principal "mo:base/Principal";
 import Option "mo:base/Option";
 import { trap } "mo:base/Runtime";
+import { print } "mo:base/Debug";
 
 module {
   // In addition th the `RegisterResult` this helper returns the relevant record type,
@@ -31,8 +32,11 @@ module {
     };
 
     if (not Principal.isController(caller)) {
+      print("principal is not a controller: " # Principal.toText(caller));
+      print("domainLowercase: " # domainLowercase);
       // Only subdomains of .test.icp are allowed for non-controllers
       if (not Text.endsWith(domainLowercase, #text(".test" # myTld))) {
+        print("domain does not end with .test.icp, returning error");
         return (
           {
             success = false;
@@ -41,11 +45,13 @@ module {
           "",
         );
       };
+      print("ends with .test.icp, continuing");
       // If the domain was registered previously, the caller must match the existing registrant.
       switch (maybeRegistrant) {
         case (null) {};
         case (?registrant) {
           if (registrant != caller) {
+            print("registrant does not match caller, returning error");
             return (
               {
                 success = false;
@@ -57,6 +63,7 @@ module {
         };
       };
     };
+    print("caller is a controller or matches the registrant, continuing");
     let registrationRecord : DomainTypes.RegistrationRecords = {
       controllers = [{
         principal = caller;
