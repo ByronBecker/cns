@@ -128,6 +128,7 @@ fn should_register_and_lookup() {
         ("nns_registry.icp.", "rwlgt-iiaaa-aaaaa-aaaaa-cai"),
     ] {
         let result = env.register_domain(domain, cid_text);
+        println!("Result of registering domain {}: {:?}", domain, result);
         assert!(result.is_ok(), "Domain registration failed: {:?}", result);
         let result = env.lookup_domain(domain);
         assert_matches!(result, Ok(cid) if (cid.to_string() == cid_text));

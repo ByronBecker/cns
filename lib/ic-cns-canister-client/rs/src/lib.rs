@@ -105,6 +105,10 @@ pub async fn lookup_domain(domain: &str) -> Result<CanisterId, CnsError> {
 
 pub async fn register_domain(domain: &str, cid: CanisterId) -> Result<(), CnsError> {
     let nc_cid = lookup_nc(domain).await?;
+    println!(
+        "Registering domain {} with CID {} in NC canister {}",
+        domain, cid, nc_cid
+    );
     let record = DomainRecord {
         name: domain.to_string(),
         record_type: "CID".to_string(),
@@ -121,6 +125,10 @@ pub async fn register_domain(domain: &str, cid: CanisterId) -> Result<(), CnsErr
         (domain.to_string(), registration_records),
     )
     .await?;
+    println!(
+        "register_domain result for domain {}: {:?}",
+        domain, register
+    );
     if register.success {
         return Ok(());
     }
