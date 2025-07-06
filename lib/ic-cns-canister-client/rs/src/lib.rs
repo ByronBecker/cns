@@ -1,4 +1,4 @@
-use candid::{CandidType, Deserialize, Principal};
+use candid::{CandidType, Deserialize, Principal, Nat};
 pub use cns_domain_registry::types::RegisterResult;
 use ic_cdk::api::call::{call, RejectionCode};
 use lazy_static::lazy_static;
@@ -42,7 +42,7 @@ impl From<(RejectionCode, String)> for CnsError {
 pub struct DomainRecord {
     pub name: String,
     pub record_type: String,
-    pub ttl: u32,
+    pub ttl: Nat,
     pub data: String,
 }
 
@@ -113,7 +113,7 @@ pub async fn register_domain(domain: &str, cid: CanisterId) -> Result<(), CnsErr
     let record = DomainRecord {
         name: domain.to_string(),
         record_type: "CID".to_string(),
-        ttl: 3600,
+        ttl: Nat::from(3600u32),
         data: cid.to_string(),
     };
     let registration_records = RegistrationRecords {

@@ -1,5 +1,6 @@
-use candid::{encode_args, encode_one, Decode, Principal};
+use candid::{encode_args, encode_one, Decode, Principal, Nat};
 use ic_cns_canister_client::{CnsError, DomainLookup, DomainRecord, RegistrationRecords};
+pub use cns_domain_registry::types::RegisterResult;
 use pocket_ic::{PocketIc, PocketIcBuilder, WasmResult};
 use std::fs;
 
@@ -77,41 +78,10 @@ impl CnsFixture {
             records: Some(vec![DomainRecord {
                 name: ".icp.".to_string(),
                 record_type: "NC".to_string(),
-                ttl: 3600,
+                ttl: Nat::from(3600u32),
                 data: self.tld_operator.to_string(),
             }]),
         };
-
-        let args = encode_args((&".icp.", &registration_records)).expect("failed encoding args");
-        let response = self.pic.update_call(
-            self.cns_root,
-            Principal::anonymous(),
-            "register",
-            args,
-        );
-
-        // Pattern match the reply:
-        let Ok(WasmResult::Reply(reply)) = response else {
-            panic!("call failed: {:?}", response);
-        };
-
-        // Decode the reply into Result<DomainLookup, CnsError>
-        let result: Result<DomainLookup, CnsError> =
-            Decode!(&reply, Result<DomainLookup, CnsError>).expect("reply decoding failed");
-
-        match result {
-            Ok(lookup) => {
-                println!("✅ Lookup successful:");
-                println!("Answers: {:?}", lookup.answers);
-                println!("Additionals: {:?}", lookup.additionals);
-                println!("Authorities: {:?}", lookup.authorities);
-            }
-            Err(e) => {
-                eprintln!("❌ CNS lookup failed: {:?}", e);
-            }
-        }
-
-        /*
         self.pic
             .update_call(
                 self.cns_root,
@@ -120,7 +90,6 @@ impl CnsFixture {
                 encode_args((&".icp.", &registration_records)).expect("failed encoding args"),
             )
             .expect("Failed registering NC for icp");
-        */
     }
 
     fn register_domain(&self, domain: &str, cid_text: &str) -> Result<(), CnsError> {
@@ -161,7 +130,6 @@ fn should_register_and_lookup() {
         ("nns_registry.icp.", "rwlgt-iiaaa-aaaaa-aaaaa-cai"),
     ] {
         let result = env.register_domain(domain, cid_text);
-        println!("Result of registering domain {}: {:?}", domain, result);
         assert!(result.is_ok(), "Domain registration failed: {:?}", result);
         let result = env.lookup_domain(domain);
         assert_matches!(result, Ok(cid) if (cid.to_string() == cid_text));
