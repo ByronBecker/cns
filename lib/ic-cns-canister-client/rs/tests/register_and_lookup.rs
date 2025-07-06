@@ -1,5 +1,5 @@
 use candid::{encode_args, encode_one, Decode, Principal};
-use ic_cns_canister_client::{CnsError, DomainRecord, RegistrationRecords};
+use ic_cns_canister_client::{CnsError, DomainLookup, DomainRecord, RegistrationRecords};
 use pocket_ic::{PocketIc, PocketIcBuilder, WasmResult};
 use std::fs;
 
@@ -81,6 +81,37 @@ impl CnsFixture {
                 data: self.tld_operator.to_string(),
             }]),
         };
+
+        let args = encode_args((&".icp.", &registration_records)).expect("failed encoding args");
+        let response = self.pic.update_call(
+            self.cns_root,
+            Principal::anonymous(),
+            "register",
+            args,
+        );
+
+        // Pattern match the reply:
+        let Ok(WasmResult::Reply(reply)) = response else {
+            panic!("call failed: {:?}", response);
+        };
+
+        // Decode the reply into Result<DomainLookup, CnsError>
+        let result: Result<DomainLookup, CnsError> =
+            Decode!(&reply, Result<DomainLookup, CnsError>).expect("reply decoding failed");
+
+        match result {
+            Ok(lookup) => {
+                println!("✅ Lookup successful:");
+                println!("Answers: {:?}", lookup.answers);
+                println!("Additionals: {:?}", lookup.additionals);
+                println!("Authorities: {:?}", lookup.authorities);
+            }
+            Err(e) => {
+                eprintln!("❌ CNS lookup failed: {:?}", e);
+            }
+        }
+
+        /*
         self.pic
             .update_call(
                 self.cns_root,
@@ -89,6 +120,7 @@ impl CnsFixture {
                 encode_args((&".icp.", &registration_records)).expect("failed encoding args"),
             )
             .expect("Failed registering NC for icp");
+        */
     }
 
     fn register_domain(&self, domain: &str, cid_text: &str) -> Result<(), CnsError> {
@@ -122,6 +154,7 @@ impl CnsFixture {
 fn should_register_and_lookup() {
     let env = CnsFixture::init();
     env.register_icp_nc();
+
     for (domain, cid_text) in [
         ("example.icp.", "aaaaa-aa"),
         ("nns_governance.icp.", "rrkah-fqaaa-aaaaa-aaaaq-cai"),

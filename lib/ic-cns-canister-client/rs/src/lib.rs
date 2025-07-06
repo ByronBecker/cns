@@ -47,7 +47,7 @@ pub struct DomainRecord {
 }
 
 #[derive(CandidType, Deserialize, Clone, Debug)]
-struct DomainLookup {
+pub struct DomainLookup {
     pub answers: Vec<DomainRecord>,
     pub additionals: Vec<DomainRecord>,
     pub authorities: Vec<DomainRecord>,
@@ -88,6 +88,7 @@ fn get_cid_from_records(records: &[DomainRecord], context: &str) -> Result<Canis
 }
 
 async fn lookup_nc(domain: &str) -> Result<CanisterId, CnsError> {
+    println!("Looking up NC for domain: {}", domain);
     let cns_root = *CNS_ROOT_CID
         .lock()
         .map_err(|e| CnsError::Internal(format!("Failed getting CNS root cid: {}", e)))?;
